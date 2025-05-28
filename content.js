@@ -1,16 +1,18 @@
-
 chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
-  const outputMode = config.outputMode || "clipboard";
   const vaultFolder = config.vaultFolder || "Amazon/";
 
   function encodeMarkdownForURI(content) {
     return encodeURIComponent(content).replace(/'/g, "%27").replace(/"/g, "%22");
   }
 
+  function sanitize(str) {
+    return str.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  }
+
   function extractAmazonInfo() {
     const canonicalUrl = document.querySelector("link[rel='canonical']")?.href || window.location.href;
     const asinMatch = canonicalUrl.match(/\/dp\/([A-Z0-9]{10})/);
-    const asin = asinMatch ? asinMatch[1] : "ASIN non trouvé";
+    const asin = asinMatch ? asinMatch[1] : "ASIN_NON_TROUVE";
 
     const title = document.getElementById("productTitle")?.innerText.trim() || "Titre introuvable";
     const price = document.querySelector("[data-asin-price]")?.getAttribute("data-asin-price")
@@ -21,8 +23,9 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
     const brand = brandElement?.innerText || "Marque non trouvée";
     const brandUrl = brandElement?.href || "Lien marque non trouvé";
 
-    const category = Array.from(document.querySelectorAll("#seo-breadcrumb-desktop-card_DetailPage_6 a"))
-                          .map(el => `[${el.innerText.trim()}](${el.href})`).join(" > ") || "Catégorie non trouvée";
+    const categoryArr = Array.from(document.querySelectorAll("#seo-breadcrumb-desktop-card_DetailPage_6 a"));
+    const category = categoryArr.map(el => el.innerText.trim()).join(" > ") || "Uncategorized";
+    const categorySlug = sanitize(category.split(">")[0] || "uncategorized");
 
     const landingImage = document.getElementById("landingImage")?.src;
     const imageMarkdown = landingImage ? `![image](${landingImage})` : "Image principale non trouvée";
@@ -37,7 +40,10 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
     const variations = Array.from(document.querySelectorAll("#twister .a-button-selected span.a-button-text"))
                             .map(el => el.innerText.trim()).join(", ") || "Aucune déclinaison";
 
-    const tags = ["#amazon", `#${brand.toLowerCase().replace(/\s+/g, "_")}`, ...category.split(">").map(cat => `#${cat.replace(/\[|\]\(.+?\)/g, '').trim().toLowerCase().replace(/\s+/g, "_")}`)];
+    const keywords = Array.from(document.querySelectorAll("meta[name='keywords']"))
+                          .map(m => m.content).join(", ");
+
+    const tags = ["#amazon", `#${brand.toLowerCase().replace(/\s+/g, "_")}`];
 
     const properties = [
       "---",
@@ -47,6 +53,7 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
       `brand: ${brand}`,
       `brand_url: ${brandUrl}`,
       `category: ${category}`,
+      `keywords: ${keywords}`,
       `tags: [${tags.join(", ")}]`,
       `variations: ${variations}`,
       `amazon_url: ${canonicalUrl}`,
@@ -56,40 +63,32 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
 
     const markdown = [
       properties,
-      ``,
+      "",
       `## 🛍️ ${title}`,
-      ``,
+      "",
       `**Marque :** [${brand}](${brandUrl})`,
       `**Catégorie :** ${category}`,
       `**Déclinaisons :** ${variations}`,
       `**Prix :** ${price}`,
       `**ASIN :** ${asin}`,
       `**URL :** [Voir sur Amazon](${canonicalUrl})`,
-      ``,
+      "",
       `### 📸 Image principale`,
       imageMarkdown,
-      ``,
+      "",
       `### 📌 Points clés`,
       bullets || "Aucun bullet point trouvé",
-      ``,
+      "",
       `### 📝 Description`,
       description
     ].join("\n");
 
-    const filename = `${title.replace(/[^a-z0-9]/gi, '_').substring(0, 50)}.md`;
+    const firstWords = sanitize(title).split("_").slice(0, 5).join("_");
+    const filename = `${asin}-${categorySlug}-${firstWords}.md`;
 
-    if (outputMode === "clipboard") {
-      navigator.clipboard.writeText(markdown).then(() => {
-        alert("✅ Infos copiées dans le presse-papiers !");
-      });
-    } else if (outputMode === "markdown") {
-      const blob = new Blob([markdown], { type: "text/markdown" });
-      const url = URL.createObjectURL(blob);
-      chrome.runtime.sendMessage({ action: "download", url: url, filename: filename });
-    } else if (outputMode === "obsidian-uri") {
-      const uri = `obsidian://new?name=${encodeURIComponent(vaultFolder + filename.replace('.md',''))}&content=${encodeMarkdownForURI(markdown)}`;
-      window.open(uri, "_blank");
-    }
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    chrome.runtime.sendMessage({ action: "download", url: url, filename: filename });
   }
 
   extractAmazonInfo();

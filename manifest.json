@@ -1,1 +1,38 @@
-{"manifest_version": 3, "name": "Amazon Product Scraper", "version": "1.4", "description": "Scraper Amazon : Markdown, clipboard, Obsidian URI + tags + déclinaisons", "permissions": ["scripting", "activeTab", "storage", "downloads", "clipboardWrite", "contextMenus"], "background": {"service_worker": "background.js"}, "commands": {"scrape-amazon": {"suggested_key": {"default": "Ctrl+Shift+Y"}, "description": "Scraper Amazon avec export configuré"}}, "host_permissions": ["*://*.amazon.com/*"], "action": {"default_title": "Amazon Scraper", "default_popup": "popup.html"}}
+{
+    "manifest_version": 3,
+    "name": "Amazon Product Scraper",
+    "version": "1.4",
+    "description": "Scraper Amazon : Markdown, clipboard, Obsidian URI + tags + déclinaisons",
+    "permissions": [
+      "scripting",
+      "activeTab",
+      "storage",
+      "downloads",
+      "clipboardWrite",
+      "contextMenus"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "commands": {
+      "scrape-amazon": {
+        "suggested_key": {
+          "default": "Alt+Shift+A"
+        },
+        "description": "Scraper Amazon avec export Markdown"
+      }
+    },
+    "host_permissions": [
+      "*://www.amazon.com/*",
+      "*://www.amazon.fr/*",
+      "*://www.amazon.de/*",
+      "*://www.amazon.it/*",
+      "*://www.amazon.es/*",
+      "*://www.amazon.ca/*",
+      "*://www.amazon.co.uk/*"
+    ],
+    "action": {
+      "default_title": "Amazon Scraper"
+    }
+  }
+  
