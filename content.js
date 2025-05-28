@@ -15,9 +15,12 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
     const asin = asinMatch ? asinMatch[1] : "ASIN_NON_TROUVE";
 
     const title = document.getElementById("productTitle")?.innerText.trim() || "Titre introuvable";
-    const price = document.querySelector("[data-asin-price]")?.getAttribute("data-asin-price")
-                || document.querySelector("[data-display-price]")?.getAttribute("data-display-price")
-                || "Prix non trouvé";
+
+    // Recherche du prix dans plusieurs sélecteurs connus
+    const price = document.querySelector("#priceblock_ourprice")?.innerText.trim()
+              || document.querySelector("#priceblock_dealprice")?.innerText.trim()
+              || document.querySelector(".a-price .a-offscreen")?.innerText.trim()
+              || "Prix non trouvé";
 
     const brandElement = document.querySelector("#bylineInfo");
     const brand = brandElement?.innerText || "Marque non trouvée";
@@ -43,8 +46,6 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
     const keywords = Array.from(document.querySelectorAll("meta[name='keywords']"))
                           .map(m => m.content).join(", ");
 
-    const tags = ["#amazon", `#${brand.toLowerCase().replace(/\s+/g, "_")}`];
-
     const properties = [
       "---",
       `title: ${title}`,
@@ -54,7 +55,6 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
       `brand_url: ${brandUrl}`,
       `category: ${category}`,
       `keywords: ${keywords}`,
-      `tags: [${tags.join(", ")}]`,
       `variations: ${variations}`,
       `amazon_url: ${canonicalUrl}`,
       `image: ${landingImage || ''}`,
@@ -83,8 +83,8 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
       description
     ].join("\n");
 
-    const firstWords = sanitize(title).split("_").slice(0, 5).join("_");
-    const filename = `${asin}-${categorySlug}-${firstWords}.md`;
+    const firstWords = sanitize(title).split("_").slice(0, 4).join("_");
+    const filename = `${asin}_${firstWords}.md`;
 
     const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
