@@ -46,6 +46,11 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
     const keywords = Array.from(document.querySelectorAll("meta[name='keywords']"))
                           .map(m => m.content).join(", ");
 
+    const reviewCount = document.getElementById("acrCustomerReviewText")?.innerText.trim() || "Nombre d'avis non trouvé";
+    const rating = document.querySelector("i[data-asin-rating] span")?.innerText.trim()
+                 || document.querySelector("span.a-icon-alt")?.innerText.trim()
+                 || "Note non trouvée";
+
     const properties = [
       "---",
       `title: ${title}`,
@@ -55,6 +60,8 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
       `brand_url: ${brandUrl}`,
       `category: ${category}`,
       `keywords: ${keywords}`,
+      `rating: ${rating}`,
+      `review_count: ${reviewCount}`,
       `variations: ${variations}`,
       `amazon_url: ${canonicalUrl}`,
       `image: ${landingImage || ''}`,
@@ -71,6 +78,8 @@ chrome.storage.local.get(["outputMode", "vaultFolder"], (config) => {
       `**Déclinaisons :** ${variations}`,
       `**Prix :** ${price}`,
       `**ASIN :** ${asin}`,
+      `**Note moyenne :** ${rating}`,
+      `**Nombre d'avis :** ${reviewCount}`,
       `**URL :** [Voir sur Amazon](${canonicalUrl})`,
       "",
       `### 📸 Image principale`,
